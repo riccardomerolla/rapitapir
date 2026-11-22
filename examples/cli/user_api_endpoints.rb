@@ -1,56 +1,83 @@
 # frozen_string_literal: true
 
-# Add the lib directory to the load path
-lib_path = File.expand_path('../lib', __dir__)
-$LOAD_PATH.unshift(lib_path) unless $LOAD_PATH.include?(lib_path)
+require_relative '../../lib/rapitapir'
 
-require 'rapitapir'
+USER_TYPE = RapiTapir::Types.hash({
+  'id' => RapiTapir::Types.integer,
+  'name' => RapiTapir::Types.string,
+  'email' => RapiTapir::Types.string
+})
 
-# Include DSL to use helper methods
-include RapiTapir::DSL
+USER_FULL_TYPE = RapiTapir::Types.hash({
+  'id' => RapiTapir::Types.integer,
+  'name' => RapiTapir::Types.string,
+  'email' => RapiTapir::Types.string,
+  'created_at' => RapiTapir::Types.string
+})
+
+CREATE_USER_TYPE = RapiTapir::Types.hash({
+  'name' => RapiTapir::Types.string,
+  'email' => RapiTapir::Types.string,
+  'password' => RapiTapir::Types.string
+})
+
+ERROR_TYPE = RapiTapir::Types.hash({
+  'error' => RapiTapir::Types.string,
+  'message' => RapiTapir::Types.string
+})
+
+VALIDATION_ERROR_TYPE = RapiTapir::Types.hash({
+  'error' => RapiTapir::Types.string,
+  'validation_errors' => RapiTapir::Types.array(RapiTapir::Types.string)
+})
 
 # Define endpoints for CLI usage
-[
+user_api_endpoints = [
   # Get all users
   RapiTapir.get('/users')
-           .out(json_body([{ id: :integer, name: :string, email: :string }]))
+           .ok(RapiTapir::Types.array(USER_TYPE))
            .summary('Get all users')
-           .description('Retrieve a list of all users'),
+           .description('Retrieve a list of all users')
+           .build,
 
   # Get user by ID
   RapiTapir.get('/users/:id')
-           .in(path_param(:id, :integer))
-           .out(json_body({ id: :integer, name: :string, email: :string }))
+           .path_param(:id, RapiTapir::Types.integer)
+           .ok(USER_FULL_TYPE)
+           .not_found(ERROR_TYPE)
            .summary('Get user by ID')
-           .description('Retrieve a specific user by their ID'),
+           .description('Retrieve a specific user by their ID')
+           .build,
 
-  # Create new user
+  # Create a new user
   RapiTapir.post('/users')
-           .in(body({ name: :string, email: :string }))
-           .out(json_body({ id: :integer, name: :string, email: :string }))
-           .summary('Create new user')
-           .description('Create a new user with the provided information'),
+           .json_body(CREATE_USER_TYPE)
+           .created(USER_TYPE)
+           .bad_request(VALIDATION_ERROR_TYPE)
+           .summary('Create a new user')
+           .description('Create a new user account')
+           .build,
 
-  # Update user
+  # Update a user
   RapiTapir.put('/users/:id')
-           .in(path_param(:id, :integer))
-           .in(body({ name: :string, email: :string }))
-           .out(json_body({ id: :integer, name: :string, email: :string }))
-           .summary('Update user')
-           .description('Update an existing user'),
+           .path_param(:id, RapiTapir::Types.integer)
+           .json_body(RapiTapir::Types.hash({
+                       'name' => RapiTapir::Types.string,
+                       'email' => RapiTapir::Types.string
+                     }))
+           .ok(USER_FULL_TYPE)
+           .not_found(ERROR_TYPE)
+           .bad_request(VALIDATION_ERROR_TYPE)
+           .summary('Update a user')
+           .description('Update an existing user')
+           .build,
 
-  # Delete user
+  # Delete a user
   RapiTapir.delete('/users/:id')
-           .in(path_param(:id, :integer))
-           .out(json_body({ success: :boolean }))
-           .summary('Delete user')
-           .description('Delete a user by their ID'),
-
-  # Search users
-  RapiTapir.get('/users/search')
-           .in(query(:q, :string))
-           .in(query(:limit, :integer, optional: true))
-           .out(json_body([{ id: :integer, name: :string, email: :string }]))
-           .summary('Search users')
-           .description('Search for users by name or email')
+           .path_param(:id, RapiTapir::Types.integer)
+           .no_content
+           .not_found(ERROR_TYPE)
+           .summary('Delete a user')
+           .description('Permanently delete a user account')
+           .build
 ]

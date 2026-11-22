@@ -13,6 +13,7 @@
 
 require 'sinatra/base'
 require 'json'
+require 'rack'
 require_relative '../lib/rapitapir'
 require_relative '../lib/rapitapir/server/sinatra_adapter'
 
@@ -313,79 +314,43 @@ end
 
 # Main Sinatra Application
 class EnterpriseTaskAPI < Sinatra::Base
-  def initialize
-    super
+  set :show_exceptions, false
+  set :raise_errors, false
+  set :dump_errors, false
 
-    configure do
-      set :show_exceptions, false
-      set :raise_errors, false
-      set :dump_errors, false
-    end
+  # Setup authentication scheme
+  bearer_auth = RapiTapir::Auth.bearer_token(:bearer, {
+                                               realm: 'Enterprise Task Management API',
+                                               token_validator: proc do |token|
+                                                 user = UserDatabase.find_by_token(token)
+                                                 next nil unless user
 
-    # Setup authentication scheme
-    bearer_auth = RapiTapir::Auth.bearer_token(:bearer, {
-                                                 realm: 'Enterprise Task Management API',
-                                                 token_validator: proc do |token|
-                                                   user = UserDatabase.find_by_token(token)
-                                                   next nil unless user
+                                                 {
+                                                   user: user,
+                                                   scopes: user[:scopes]
+                                                 }
+                                               end
+                                             })
 
-                                                   {
-                                                     user: user,
-                                                     scopes: user[:scopes]
-                                                   }
-                                                 end
-                                               })
+  auth_schemes = { bearer: bearer_auth }
 
-    auth_schemes = { bearer: bearer_auth }
+  # Setup middleware stack
+  use RapiTapir::Auth::Middleware::SecurityHeadersMiddleware
+  use RapiTapir::Auth::Middleware::CorsMiddleware, {
+    allowed_origins: ['http://localhost:3000', 'https://app.example.com'],
+    allowed_methods: %w[GET POST PUT DELETE PATCH OPTIONS],
+    allowed_headers: %w[Authorization Content-Type Accept],
+    allow_credentials: true
+  }
+  use RapiTapir::Auth::Middleware::RateLimitingMiddleware, {
+    requests_per_minute: 100,
+    requests_per_hour: 2000
+  }
+  use RapiTapir::Auth::Middleware::AuthenticationMiddleware, auth_schemes
 
-    # Setup middleware stack
-    use RapiTapir::Auth::Middleware::SecurityHeadersMiddleware
-    use RapiTapir::Auth::Middleware::CorsMiddleware, {
-      allowed_origins: ['http://localhost:3000', 'https://app.example.com'],
-      allowed_methods: %w[GET POST PUT DELETE PATCH OPTIONS],
-      allowed_headers: %w[Authorization Content-Type Accept],
-      allow_credentials: true
-    }
-    use RapiTapir::Auth::Middleware::RateLimitingMiddleware, {
-      requests_per_minute: 100,
-      requests_per_hour: 2000
-    }
-    use RapiTapir::Auth::Middleware::AuthenticationMiddleware, auth_schemes
+  # --- helpers removed: see class-level json_response/enforce!/format_task ---
 
-    # Setup RapiTapir adapter and register endpoints
-    setup_rapitapir_endpoints
-  end
-
-  # Helper methods
-  def json_response(status, data)
-    content_type :json
-    halt status, JSON.generate(data)
-  end
-
-  def require_scope(scope)
-    return if RapiTapir::Auth.has_scope?(scope)
-
-    json_response(403, { error: "#{scope.capitalize} permission required" })
-  end
-
-  def require_authenticated
-    return if RapiTapir::Auth.authenticated?
-
-    json_response(401, { error: 'Authentication required' })
-  end
-
-  def parse_json_body
-    if request.content_type&.include?('application/json') && request.body.read.length.positive?
-      request.body.rewind
-      JSON.parse(request.body.read, symbolize_names: true)
-    else
-      {}
-    end
-  rescue JSON::ParserError
-    json_response(400, { error: 'Invalid JSON' })
-  end
-
-  def format_task(task)
+  def self.format_task(task)
     task_copy = task.dup
     task_copy[:created_at] = task_copy[:created_at].iso8601 if task_copy[:created_at]
     task_copy[:updated_at] = task_copy[:updated_at].iso8601 if task_copy[:updated_at]
@@ -394,16 +359,36 @@ class EnterpriseTaskAPI < Sinatra::Base
 
   private
 
-  def setup_rapitapir_endpoints
+  def self.setup_rapitapir_endpoints
+    # Bind the adapter to the app class: route DSL (get/post/...) is a class
+    # method, and handlers instance_exec'd against the class can use the
+    # class-level helpers below (json_response, enforce!, format_task).
     adapter = RapiTapir::Server::SinatraAdapter.new(self)
 
     # Register all endpoints using the adapter
     TaskAPI.endpoints.each do |endpoint|
       adapter.register_endpoint(endpoint, get_endpoint_handler(endpoint))
     end
+
+    adapter
   end
 
-  def get_endpoint_handler(endpoint)
+  # Helper methods (class-level; the adapter runs handlers in class context).
+  # Handlers return either a plain data hash (200 + JSON) or a
+  # [status, headers, body] triple, which the adapter translates directly.
+  def self.json_response(status, data)
+    [status, { 'Content-Type' => 'application/json' }, JSON.generate(data)]
+  end
+
+  # Returns nil when the scope is satisfied, otherwise a 401/403 response triple.
+  def self.enforce!(scope)
+    return json_response(401, { error: 'Authentication required' }) unless RapiTapir::Auth.authenticated?
+    return json_response(403, { error: "#{scope.capitalize} permission required" }) unless RapiTapir::Auth.scope?(scope)
+
+    nil
+  end
+
+  def self.get_endpoint_handler(endpoint)
     case endpoint.path
     when '/health'
       proc do |_inputs|
@@ -420,8 +405,8 @@ class EnterpriseTaskAPI < Sinatra::Base
     when '/api/v1/tasks'
       if endpoint.method == :get
         proc do |inputs|
-          require_authenticated
-          require_scope('read')
+          guard = enforce!('read')
+          return guard if guard
 
           tasks = TaskDatabase.all
 
@@ -440,8 +425,8 @@ class EnterpriseTaskAPI < Sinatra::Base
         end
       else # POST
         proc do |inputs|
-          require_authenticated
-          require_scope('write')
+          guard = enforce!('write')
+          return guard if guard
 
           body = inputs[:body] || {}
 
@@ -463,11 +448,11 @@ class EnterpriseTaskAPI < Sinatra::Base
       case endpoint.method
       when :get
         proc do |inputs|
-          require_authenticated
-          require_scope('read')
+          guard = enforce!('read')
+          return guard if guard
 
           task = TaskDatabase.find(inputs[:id])
-          halt 404, { error: 'Task not found' }.to_json unless task
+          return json_response(404, { error: 'Task not found' }) unless task
 
           # Enrich with assignee details
           assignee = UserDatabase.find_by_id(task[:assignee_id])
@@ -484,11 +469,11 @@ class EnterpriseTaskAPI < Sinatra::Base
         end
       when :put
         proc do |inputs|
-          require_authenticated
-          require_scope('write')
+          guard = enforce!('write')
+          return guard if guard
 
           task = TaskDatabase.find(inputs[:id])
-          halt 404, { error: 'Task not found' }.to_json unless task
+          return json_response(404, { error: 'Task not found' }) unless task
 
           body = inputs[:body] || {}
           update_data = {}
@@ -505,21 +490,21 @@ class EnterpriseTaskAPI < Sinatra::Base
         end
       when :delete
         proc do |inputs|
-          require_authenticated
-          require_scope('admin')
+          guard = enforce!('admin')
+          return guard if guard
 
           task = TaskDatabase.find(inputs[:id])
-          halt 404, { error: 'Task not found' }.to_json unless task
+          return json_response(404, { error: 'Task not found' }) unless task
 
           TaskDatabase.delete(inputs[:id])
-          status 204
-          nil # Return nothing for 204 No Content
+          [204, {}, '']
         end
       end
 
     when '/api/v1/profile'
       proc do |_inputs|
-        require_authenticated
+        guard = enforce!('read')
+        return guard if guard
 
         current_user = RapiTapir::Auth.current_user
 
@@ -539,15 +524,15 @@ class EnterpriseTaskAPI < Sinatra::Base
 
     when '/api/v1/admin/users'
       proc do |_inputs|
-        require_authenticated
-        require_scope('admin')
+        guard = enforce!('admin')
+        return guard if guard
 
         UserDatabase.all_users
       end
 
     else
       proc do |_inputs|
-        halt 404, { error: 'Endpoint not implemented' }.to_json
+        json_response(404, { error: 'Endpoint not implemented' })
       end
     end
   end
@@ -656,6 +641,9 @@ class EnterpriseTaskAPI < Sinatra::Base
     puts '🔧 Architecture: Routes handled by SinatraAdapter with automatic input/output validation'
     puts ''
   end
+
+  # Now that get_endpoint_handler is defined, wire up the adapter + routes
+  setup_rapitapir_endpoints
 end
 
 # Start the server if this file is run directly

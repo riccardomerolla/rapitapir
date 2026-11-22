@@ -135,21 +135,21 @@ if SINATRA_AVAILABLE
       server(url: 'https://api.example.com', description: 'Production server')
 
       # Authentication configuration
-      bearer_auth(:bearer, {
-                    realm: 'Enterprise Task Management API',
-                    token_validator: proc do |token|
-                      user = UserDatabase.find_by_token(token)
-                      next nil unless user
+      add_auth_scheme(:bearer, RapiTapir::Auth.bearer_token(:bearer, {
+                                                  realm: 'Enterprise Task Management API',
+                                                  token_validator: proc do |token|
+                                                    user = UserDatabase.find_by_token(token)
+                                                    next nil unless user
 
-                      {
-                        user: user,
-                        scopes: user[:scopes]
-                      }
-                    end
-                  })
+                                                    {
+                                                      user: user,
+                                                      scopes: user[:scopes]
+                                                    }
+                                                  end
+                                                }))
 
       # Middleware configuration based on environment
-      if development?
+      if Sinatra::Base.environment == :development
         development_defaults!
       else
         production_defaults!

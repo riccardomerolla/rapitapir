@@ -5,180 +5,178 @@ require_relative '../lib/rapitapir'
 
 # Example: User Management API
 module UserAPI
-  extend RapiTapir::DSL
+  # Shared type definitions
+  USER_TYPE = RapiTapir::Types.hash({
+    'id' => RapiTapir::Types.integer,
+    'name' => RapiTapir::Types.string,
+    'email' => RapiTapir::Types.string
+  })
+
+  USER_DETAIL_TYPE = RapiTapir::Types.hash({
+    'id' => RapiTapir::Types.integer,
+    'name' => RapiTapir::Types.string,
+    'email' => RapiTapir::Types.string,
+    'created_at' => RapiTapir::Types.datetime
+  })
+
+  CREATE_USER_TYPE = RapiTapir::Types.hash({
+    'name' => RapiTapir::Types.string,
+    'email' => RapiTapir::Types.string,
+    'password' => RapiTapir::Types.string
+  })
+
+  LOGIN_TYPE = RapiTapir::Types.hash({
+    'email' => RapiTapir::Types.string,
+    'password' => RapiTapir::Types.string
+  })
+
+  LOGIN_RESULT_TYPE = RapiTapir::Types.hash({
+    'user' => USER_TYPE,
+    'token' => RapiTapir::Types.string,
+    'expires_at' => RapiTapir::Types.datetime
+  })
+
+  ERROR_TYPE = RapiTapir::Types.hash({
+    'error' => RapiTapir::Types.string
+  })
+
+  VALIDATION_ERROR_TYPE = RapiTapir::Types.hash({
+    'error' => RapiTapir::Types.string,
+    'validation_errors' => RapiTapir::Types.array(
+      RapiTapir::Types.hash({
+        'field' => RapiTapir::Types.string,
+        'message' => RapiTapir::Types.string
+      })
+    )
+  })
+
+  USER_LIST_TYPE = RapiTapir::Types.hash({
+    'users' => RapiTapir::Types.array(USER_TYPE),
+    'total' => RapiTapir::Types.integer,
+    'page' => RapiTapir::Types.integer,
+    'limit' => RapiTapir::Types.integer
+  })
 
   # GET /users - List all users
   LIST_USERS = RapiTapir.get('/users')
-                        .in(query(:page, :integer, optional: true))
-                        .in(query(:limit, :integer, optional: true))
-                        .in(query(:search, :string, optional: true))
-                        .in(header(:authorization, :string))
-                        .out(status_code(200))
-                        .out(json_body({
-                                         users: [{ id: :integer, name: :string, email: :string }],
-                                         total: :integer,
-                                         page: :integer,
-                                         limit: :integer
-                                       }))
-                        .error_out(401, json_body({ error: :string }))
-                        .error_out(500, json_body({ error: :string }))
+                        .query(:page, RapiTapir::Types.optional(RapiTapir::Types.integer))
+                        .query(:limit, RapiTapir::Types.optional(RapiTapir::Types.integer))
+                        .query(:search, RapiTapir::Types.optional(RapiTapir::Types.string))
+                        .header(:authorization, RapiTapir::Types.string)
+                        .ok(USER_LIST_TYPE)
+                        .unauthorized(ERROR_TYPE)
+                        .internal_server_error(ERROR_TYPE)
                         .description('Retrieve a paginated list of users')
                         .summary('List users')
-                        .tag('users')
+                        .tags('users')
+                        .build
 
   # GET /users/:id - Get specific user
   GET_USER = RapiTapir.get('/users/:id')
-                      .in(path_param(:id, :integer))
-                      .in(header(:authorization, :string))
-                      .out(status_code(200))
-                      .out(json_body({ id: :integer, name: :string, email: :string, created_at: :datetime }))
-                      .error_out(401, json_body({ error: :string }))
-                      .error_out(404, json_body({ error: :string }))
-                      .error_out(500, json_body({ error: :string }))
+                      .path_param(:id, RapiTapir::Types.integer)
+                      .header(:authorization, RapiTapir::Types.string)
+                      .ok(USER_DETAIL_TYPE)
+                      .unauthorized(ERROR_TYPE)
+                      .not_found(ERROR_TYPE)
+                      .internal_server_error(ERROR_TYPE)
                       .description('Retrieve a specific user by ID')
                       .summary('Get user')
-                      .tag('users')
+                      .tags('users')
+                      .build
 
   # POST /users - Create new user
   CREATE_USER = RapiTapir.post('/users')
-                         .in(header(:authorization, :string))
-                         .in(header(:'content-type', :string))
-                         .in(body({ name: :string, email: :string, password: :string }))
-                         .out(status_code(201))
-                         .out(json_body({ id: :integer, name: :string, email: :string, created_at: :datetime }))
-                         .error_out(400, json_body({ error: :string, details: :string }))
-                         .error_out(401, json_body({ error: :string }))
-                         .error_out(422, json_body({ error: :string,
-                                                     validation_errors: [{ field: :string, message: :string }] }))
-                         .error_out(500, json_body({ error: :string }))
+                         .header(:authorization, RapiTapir::Types.string)
+                         .json_body(CREATE_USER_TYPE)
+                         .created(USER_DETAIL_TYPE)
+                         .bad_request(ERROR_TYPE)
+                         .unauthorized(ERROR_TYPE)
+                         .unprocessable_entity(VALIDATION_ERROR_TYPE)
+                         .internal_server_error(ERROR_TYPE)
                          .description('Create a new user account')
                          .summary('Create user')
-                         .tag('users')
+                         .tags('users')
+                         .build
 
   # PUT /users/:id - Update user
   UPDATE_USER = RapiTapir.put('/users/:id')
-                         .in(path_param(:id, :integer))
-                         .in(header(:authorization, :string))
-                         .in(header(:'content-type', :string))
-                         .in(body({ name: :string, email: :string }))
-                         .out(status_code(200))
-                         .out(json_body({ id: :integer, name: :string, email: :string, updated_at: :datetime }))
-                         .error_out(400, json_body({ error: :string, details: :string }))
-                         .error_out(401, json_body({ error: :string }))
-                         .error_out(404, json_body({ error: :string }))
-                         .error_out(422, json_body({ error: :string,
-                                                     validation_errors: [{ field: :string, message: :string }] }))
-                         .error_out(500, json_body({ error: :string }))
+                         .path_param(:id, RapiTapir::Types.integer)
+                         .header(:authorization, RapiTapir::Types.string)
+                         .json_body(RapiTapir::Types.hash({
+                                     'name' => RapiTapir::Types.string,
+                                     'email' => RapiTapir::Types.string
+                                   }))
+                         .ok(RapiTapir::Types.hash({
+                             'id' => RapiTapir::Types.integer,
+                             'name' => RapiTapir::Types.string,
+                             'email' => RapiTapir::Types.string,
+                             'updated_at' => RapiTapir::Types.datetime
+                           }))
+                         .bad_request(ERROR_TYPE)
+                         .unauthorized(ERROR_TYPE)
+                         .not_found(ERROR_TYPE)
+                         .unprocessable_entity(VALIDATION_ERROR_TYPE)
+                         .internal_server_error(ERROR_TYPE)
                          .description('Update an existing user')
                          .summary('Update user')
-                         .tag('users')
+                         .tags('users')
+                         .build
 
   # DELETE /users/:id - Delete user
   DELETE_USER = RapiTapir.delete('/users/:id')
-                         .in(path_param(:id, :integer))
-                         .in(header(:authorization, :string))
-                         .out(status_code(204))
-                         .error_out(401, json_body({ error: :string }))
-                         .error_out(404, json_body({ error: :string }))
-                         .error_out(500, json_body({ error: :string }))
+                         .path_param(:id, RapiTapir::Types.integer)
+                         .header(:authorization, RapiTapir::Types.string)
+                         .no_content
+                         .unauthorized(ERROR_TYPE)
+                         .not_found(ERROR_TYPE)
+                         .internal_server_error(ERROR_TYPE)
                          .description('Delete a user account')
                          .summary('Delete user')
-                         .tag('users')
+                         .tags('users')
+                         .build
 
   # POST /users/login - User authentication
   LOGIN_USER = RapiTapir.post('/users/login')
-                        .in(header(:'content-type', :string))
-                        .in(body({ email: :string, password: :string }))
-                        .out(status_code(200))
-                        .out(json_body({
-                                         user: { id: :integer, name: :string, email: :string },
-                                         token: :string,
-                                         expires_at: :datetime
-                                       }))
-                        .error_out(400, json_body({ error: :string }))
-                        .error_out(401, json_body({ error: :string }))
-                        .error_out(500, json_body({ error: :string }))
+                        .json_body(LOGIN_TYPE)
+                        .ok(LOGIN_RESULT_TYPE)
+                        .bad_request(ERROR_TYPE)
+                        .unauthorized(ERROR_TYPE)
+                        .internal_server_error(ERROR_TYPE)
                         .description('Authenticate user and return access token')
                         .summary('User login')
-                        .tag('authentication')
+                        .tags('authentication')
+                        .build
 
   # Example usage and validation
   def self.demo
     puts '=== RapiTapir User API Demo ==='
     puts
 
-    # Example 1: Valid user creation
-    puts '1. Valid user creation:'
-    input_data = {
-      body: { name: 'John Doe', email: 'john@example.com', password: 'secret123' }
-    }
-    output_data = {
-      id: 1,
-      name: 'John Doe',
-      email: 'john@example.com',
-      created_at: DateTime.now
-    }
-
-    begin
-      CREATE_USER.validate!(input_data, output_data)
-      puts '✓ Validation passed'
-    rescue StandardError => e
-      puts "✗ Validation failed: #{e.message}"
-    end
+    # Example 1: Endpoint structure
+    puts '1. Endpoint structure:'
+    puts '  GET /users:'
+    puts "  Method: #{LIST_USERS.method} #{LIST_USERS.path}"
+    puts "  Inputs: #{LIST_USERS.inputs.length}"
+    puts "  Outputs: #{LIST_USERS.outputs.length}"
+    puts "  Error responses: #{LIST_USERS.errors.length}"
     puts
 
-    # Example 2: Invalid user creation (missing required field)
-    puts '2. Invalid user creation (missing password):'
-    invalid_input = {
-      body: { name: 'John Doe', email: 'john@example.com' }
-    }
-
-    begin
-      CREATE_USER.validate!(invalid_input, output_data)
-      puts '✓ Validation passed'
-    rescue StandardError => e
-      puts "✗ Validation failed: #{e.message}"
-    end
-    puts
-
-    # Example 3: Valid user listing
-    puts '3. Valid user listing:'
-    list_input = {}
-    list_output = {
-      users: [
-        { id: 1, name: 'John Doe', email: 'john@example.com' },
-        { id: 2, name: 'Jane Smith', email: 'jane@example.com' }
-      ],
-      total: 2,
-      page: 1,
-      limit: 10
-    }
-
-    begin
-      LIST_USERS.validate!(list_input, list_output)
-      puts '✓ Validation passed'
-    rescue StandardError => e
-      puts "✗ Validation failed: #{e.message}"
-    end
-    puts
-
-    # Example 4: Endpoint metadata
-    puts '4. Endpoint metadata:'
-    puts 'GET /users:'
-    puts "  Description: #{GET_USER.metadata[:description]}"
+    # Example 2: Endpoint metadata
+    puts '2. Endpoint metadata:'
     puts "  Summary: #{GET_USER.metadata[:summary]}"
-    puts "  Tag: #{GET_USER.metadata[:tag]}"
-    puts "  Inputs: #{GET_USER.inputs.length}"
-    puts "  Outputs: #{GET_USER.outputs.length}"
-    puts "  Error responses: #{GET_USER.errors.length}"
+    puts "  Description: #{GET_USER.metadata[:description]}"
     puts
 
-    # Example 5: Serialization
-    puts '5. Output serialization:'
-    json_output = CREATE_USER.outputs.find { |o| o.kind == :json }
-    if json_output
-      serialized = json_output.serialize(output_data)
-      puts "JSON: #{serialized}"
+    # Example 3: Built-in validation
+    puts '3. Endpoint validation:'
+    CREATE_USER.validate!
+    puts '  CREATE_USER passed built-in validation ✓'
+
+    # Example 4: All endpoints summary
+    puts
+    puts '4. All endpoints:'
+    [LIST_USERS, GET_USER, CREATE_USER, UPDATE_USER, DELETE_USER, LOGIN_USER].each do |ep|
+      puts "  #{ep.method.to_s.ljust(6).upcase} #{ep.path}"
     end
     puts
 
