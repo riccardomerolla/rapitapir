@@ -16,6 +16,7 @@ breaking API changes, and a full repair of the example catalog.
 
 ### Changed
 - 🔢 **Bumped all dependencies to their latest releases**: dotenv 3.2, json 3.1, jwt 3.3, rack 3.2, puma 8.1, simplecov 1.3, sinatra 4.2, webmock 3.38, rubocop 1.92, rackup 2.3, rack-test 2.3, rspec 3.13, webrick 1.9, OpenTelemetry exporter-otlp 0.37 / instrumentation-all 0.102 / sdk 1.13
+- 🐾 **Minimum Ruby raised to 3.3** (`required_ruby_version >= 3.3`). The latest OpenTelemetry stack (api 1.9+, sdk 1.11+, common 0.24+) declares `ruby >= 3.3`; keeping the current otel releases required dropping the EOL 3.1/3.2 runtimes. CI matrix and all workflows now test 3.3/3.4. **This is a breaking change for Ruby 3.1/3.2 users.**
 - ⬆️ **json range widened in the gemspec** to `>= 2.6, < 4.0` to match the refreshed stack
 - 🧩 **JWT v3 compatibility**: `JWT.decode` no longer accepts the positional `verify` argument — replaced with the `verify_signature: true` option (works on jwt ≥ 2.10 and 3.x)
 - 🎨 **RuboCop 1.92 compliance**: `Style/DirectiveScope` disable/enable pairs converted to `disable-next`

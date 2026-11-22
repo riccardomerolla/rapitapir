@@ -3,7 +3,7 @@
 [![Tests](https://img.shields.io/badge/tests-695%20passing-brightgreen)](spec/)
 [![Coverage](https://img.shields.io/badge/coverage-72.7%25-green)](coverage/)
 [![Branches](https://img.shields.io/badge/branches-44.89%25-yellow)](coverage/)
-[![Ruby](https://img.shields.io/badge/ruby-3.1%2B-red)](Gemfile)
+[![Ruby](https://img.shields.io/badge/ruby-3.3%2B-red)](Gemfile)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![RuboCop](https://img.shields.io/badge/code%20style-rubocop-brightgreen)](https://github.com/rubocop/rubocop)
 [![AI Ready](https://img.shields.io/badge/AI-LLM%20%7C%20RAG%20%7C%20MCP-purple)](lib/rapitapir/ai/)

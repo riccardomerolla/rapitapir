@@ -502,7 +502,7 @@ Tapir::Docs::SwaggerUI.mount(openapi_spec, path: "/docs")
 ### Technical Metrics
 - **Performance**: < 1ms overhead for simple endpoints
 - **Memory**: < 10MB memory overhead for typical applications
-- **Compatibility**: Support for Ruby 3.1+ and all major frameworks
+- **Compatibility**: Support for Ruby 3.3+ and all major frameworks
 - **Coverage**: > 95% test coverage across all components
 
 ### Developer Experience Metrics

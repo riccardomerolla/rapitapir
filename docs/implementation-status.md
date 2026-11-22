@@ -288,7 +288,7 @@ endpoint
 ### **Technical Metrics**
 - ✅ **Performance**: < 1ms overhead achieved in benchmarks
 - ✅ **Memory**: < 10MB overhead in typical applications
-- ✅ **Compatibility**: Ruby 3.1+ support with framework compatibility
+- ✅ **Compatibility**: Ruby 3.3+ support with framework compatibility
 - ✅ **Coverage**: 70.4% coverage (target >95% for future releases)
 
 ### **Developer Experience Metrics**  
