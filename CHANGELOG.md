@@ -1,9 +1,36 @@
 # Changelog
 
-All- 📏 **Type Shortcuts**: Global `T` constant for cleaner type syntax (automatically available - no setup needed)notable changes to this project will be documented in this file.
+All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [2.1.0] - 2026-11-22
+
+### Summary
+Dependency refresh to the latest gem releases, with code adaptations for
+breaking API changes, and a full repair of the example catalog.
+
+### Added
+- 📦 **jwt runtime dependency declared in the gemspec** (`>= 2.10, < 4.0`) — it was lazily `require`d by `RapiTapir::Auth` OAuth2 validation but never declared, so installs could silently lack it
+
+### Changed
+- 🔢 **Bumped all dependencies to their latest releases**: dotenv 3.2, json 3.1, jwt 3.3, rack 3.2, puma 8.1, simplecov 1.3, sinatra 4.2, webmock 3.38, rubocop 1.92, rackup 2.3, rack-test 2.3, rspec 3.13, webrick 1.9, OpenTelemetry exporter-otlp 0.37 / instrumentation-all 0.102 / sdk 1.13
+- ⬆️ **json range widened in the gemspec** to `>= 2.6, < 4.0` to match the refreshed stack
+- 🧩 **JWT v3 compatibility**: `JWT.decode` no longer accepts the positional `verify` argument — replaced with the `verify_signature: true` option (works on jwt ≥ 2.10 and 3.x)
+- 🎨 **RuboCop 1.92 compliance**: `Style/DirectiveScope` disable/enable pairs converted to `disable-next`
+
+### Fixed
+- 📚 **`examples/enterprise_rapitapir_api.rb`**: `configure`/`set` were called from an instance `initialize` (crash on boot); auth/middleware setup moved to class level; `SinatraAdapter` now binds to the app class (Sinatra 4 removed instance→class delegation); handlers use the adapter's `[status, headers, body]` response protocol
+- 📚 **`examples/enterprise_extension_demo.rb`**: `bearer_auth` → `add_auth_scheme(:bearer, RapiTapir::Auth.bearer_token(...))` (the real `Configuration` API)
+- 📚 **`examples/demo_api.rb`, `simple_demo_api.rb`, `cli/user_api_endpoints.rb`, `user_api.rb`, `production_ready_example.rb`**: rewritten from the removed `.in/.out/.error_out` DSL onto the current builder (`json_body`, `ok`, `created`, `no_content`, `not_found`, …) with proper `RapiTapir::Types.hash/array` types
+- 📚 **`examples/auto_derivation_ruby_friendly.rb`**: now demos only the real derivation APIs (`from_hash`, `from_open_struct`, `from_json_schema`, `from_protobuf`)
+- 🧪 **All 18 examples verified running**, including live HTTP checks of the three server examples
+
+### Verification
+- ✅ 695 RSpec examples, 0 failures
+- ✅ RuboCop: 91 files, no offenses
+- ✅ `gem build` produces a clean installable package
 
 ## [Unreleased] - 2025-08-02
 

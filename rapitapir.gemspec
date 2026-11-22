@@ -40,9 +40,10 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   # Runtime dependencies
-  spec.add_dependency 'json', '~> 2.0'
+  spec.add_dependency 'json', '>= 2.6', '< 4.0'
   spec.add_dependency 'rack', '>= 2.0', '< 4.0'
   spec.add_dependency 'webrick', '~> 1.7'
+  spec.add_dependency 'jwt', '>= 2.10', '< 4.0'
 
   # Optional framework dependencies
   spec.add_dependency 'sinatra', '>= 2.0', '< 5.0'
