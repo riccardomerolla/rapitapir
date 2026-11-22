@@ -332,7 +332,7 @@ module RapiTapir
         {
           implicit: {
             authorizationUrl: @options[:authorization_url] || 'https://example.com/oauth/authorize',
-            scopes: @scopes.each_with_object({}) { |scope, hash| hash[scope] = scope.to_s.humanize }
+            scopes: @scopes.to_h { |scope| [scope, scope.to_s.humanize] }
           }
         }
       end

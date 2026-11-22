@@ -234,7 +234,7 @@ module RapiTapir
         blocks.compact.join("\n\n              ")
       end
 
-      # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+      # rubocop:disable-next Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
       def endpoint_block(http, path, operation, path_item, spec)
         method = http.to_s.downcase
         return nil unless %w[get post put patch delete].include?(method)
@@ -333,7 +333,6 @@ module RapiTapir
           end
         RUBY
       end
-      # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
       # Combine path-level and operation-level parameters. Later duplicates override earlier.
       def merge_parameters(path_item, operation)
@@ -394,7 +393,7 @@ module RapiTapir
       end
 
       # --- OpenAPI schema -> RapiTapir::Types DSL (as string) ---
-      # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+      # rubocop:disable-next Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
       def schema_to_t(schema, spec)
         schema = resolve_schema(schema, spec) || {}
         return 'T.hash({})' unless schema.is_a?(Hash)
@@ -456,7 +455,6 @@ module RapiTapir
 
         nullable ? "T.optional(#{type_expr})" : type_expr
       end
-      # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
       def resolve_schema(schema, spec)
         return nil unless schema
@@ -558,7 +556,7 @@ module RapiTapir
       end
 
       def first_success_code(operation)
-        (operation['responses'] || {}).keys.map(&:to_i).find { |c| c.between?(200, 299) }
+        (operation['responses'] || {}).keys.map(&:to_i).grep(200..299).first
       end
 
       def to_sinatra_path(openapi_path)
@@ -566,11 +564,11 @@ module RapiTapir
       end
 
       def from_openapi_path(sinatra_path)
-        sinatra_path.gsub(/:([a-zA-Z_][\w]*)/, '{\1}')
+        sinatra_path.gsub(/:([a-zA-Z_]\w*)/, '{\1}')
       end
 
       def extract_path_params(path)
-        path.scan(/:([a-zA-Z_][\w]*)/).flatten
+        path.scan(/:([a-zA-Z_]\w*)/).flatten
       end
 
       def collect_tags(spec)

@@ -528,9 +528,8 @@ module RapiTapir
         file_dir = File.dirname(File.expand_path(file_path))
         Dir.chdir(file_dir) do
           # Execute the file content using load instead of eval for safety
-          # rubocop:disable Security/Eval
+          # rubocop:disable-next Security/Eval
           eval(content, TOPLEVEL_BINDING, file_path)
-          # rubocop:enable Security/Eval
         end
 
         find_endpoints_in_variables(content)
@@ -568,9 +567,8 @@ module RapiTapir
 
         return nil unless global_endpoints_var
 
-        # rubocop:disable Security/Eval
+        # rubocop:disable-next Security/Eval
         endpoints = eval(global_endpoints_var.to_s)
-        # rubocop:enable Security/Eval
         normalize_endpoints_array(endpoints)
       end
 

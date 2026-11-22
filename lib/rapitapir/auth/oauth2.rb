@@ -90,8 +90,8 @@ module RapiTapir
           JWT.decode(
             token,
             nil,
-            true,
             {
+              verify_signature: true,
               algorithm: @algorithm,
               iss: domain_url,
               verify_iss: true,

@@ -81,3 +81,8 @@ Style/OpenStructUse:
 Style/SafeNavigationChainLength:
   Exclude:
     - 'lib/rapitapir/ai/mcp.rb'
+
+# Top-level String monkey-patch for pluralization/singularization
+Style/OneClassPerFile:
+  Exclude:
+    - 'lib/rapitapir/sinatra/resource_builder.rb'

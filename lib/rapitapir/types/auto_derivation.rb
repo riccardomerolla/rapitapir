@@ -13,7 +13,7 @@ module RapiTapir
     # - Protocol Buffer message classes
     #
     # All methods support field filtering via only/except parameters.
-    # rubocop:disable Metrics/ModuleLength
+    # rubocop:disable-next Metrics/ModuleLength
     module AutoDerivation
       class << self
         # Derive schema from a plain Hash with sample values
@@ -71,7 +71,7 @@ module RapiTapir
         # @param only [Array<Symbol>] Only include these fields
         # @param except [Array<Symbol>] Exclude these fields
         # @return [RapiTapir::Types::Hash]
-        # rubocop:disable Style/OpenStructUse
+        # rubocop:disable-next Style/OpenStructUse
         def from_open_struct(open_struct, only: nil, except: nil)
           raise ArgumentError, "Expected OpenStruct, got #{open_struct.class}" unless open_struct.is_a?(OpenStruct)
 
@@ -87,7 +87,6 @@ module RapiTapir
 
           create_hash_type(schema_hash)
         end
-        # rubocop:enable Style/OpenStructUse
 
         # Derive schema from Protobuf message class
         #
@@ -246,6 +245,5 @@ module RapiTapir
         end
       end
     end
-    # rubocop:enable Metrics/ModuleLength
   end
 end

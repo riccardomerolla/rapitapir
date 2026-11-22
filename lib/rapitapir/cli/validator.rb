@@ -299,7 +299,7 @@ module RapiTapir
 
       def validate_metadata_tags(metadata, context)
         return unless metadata[:tags]
-        return if metadata[:tags].is_a?(Array) && metadata[:tags].all? { |tag| tag.is_a?(String) }
+        return if metadata[:tags].is_a?(Array) && metadata[:tags].all?(String)
 
         @errors << "#{context}: Tags must be an array of strings"
       end
