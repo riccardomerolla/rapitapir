@@ -28,7 +28,7 @@ GEM
     logger (1.7.0)
     mustermann (3.1.1)
     nio4r (2.7.5)
-    opentelemetry-api (1.10.1)
+    opentelemetry-api (1.8.0)
       logger
     opentelemetry-common (0.25.2)
       opentelemetry-api (~> 1.0)
@@ -300,7 +300,7 @@ DEPENDENCIES
   dotenv (~> 3.2)
   json (~> 3.1)
   jwt (~> 3.3)
-  opentelemetry-api (>= 1.10, < 1.11)
+  opentelemetry-api (~> 1.8.0)
   opentelemetry-exporter-otlp (~> 0.37)
   opentelemetry-instrumentation-all (~> 0.102)
   opentelemetry-sdk (~> 1.13)

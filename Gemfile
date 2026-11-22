@@ -27,5 +27,5 @@ gem 'rackup', '~> 2.3'
 gem 'opentelemetry-exporter-otlp', '~> 0.37'
 gem 'opentelemetry-instrumentation-all', '~> 0.102'
 gem 'opentelemetry-sdk', '~> 1.13'
-# opentelemetry-api 1.11+ requires Ruby >= 3.3; keep 1.10 for the gem's >= 3.1 support
-gem 'opentelemetry-api', '>= 1.10', '< 1.11'
+# opentelemetry-api 1.9+ requires Ruby >= 3.3; keep 1.8 for the gem's >= 3.1 support
+gem 'opentelemetry-api', '~> 1.8.0'
