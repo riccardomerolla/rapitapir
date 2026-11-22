@@ -15,6 +15,8 @@ group :development, :test do
   gem 'simplecov', '~> 1.3'
   gem 'sinatra', '~> 4.2'
   gem 'webmock', '~> 3.38'
+  # public_suffix 7 requires Ruby >= 3.2; keep 6.x for the gem's >= 3.1 support
+  gem 'public_suffix', '~> 6.0'
   # Linting and style
   gem 'rubocop', '~> 1.92'
 end
@@ -25,3 +27,5 @@ gem 'rackup', '~> 2.3'
 gem 'opentelemetry-exporter-otlp', '~> 0.37'
 gem 'opentelemetry-instrumentation-all', '~> 0.102'
 gem 'opentelemetry-sdk', '~> 1.13'
+# opentelemetry-api 1.11+ requires Ruby >= 3.3; keep 1.10 for the gem's >= 3.1 support
+gem 'opentelemetry-api', '>= 1.10', '< 1.11'
